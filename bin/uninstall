@@ -1,0 +1,50 @@
+#!/bin/bash
+
+set -euo pipefail
+
+start_marker="-- omarchy-app-switcher:start"
+end_marker="-- omarchy-app-switcher:end"
+bindings_file="$HOME/.config/hypr/bindings.lua"
+helper_target="$HOME/.local/bin/omarchy-app-switcher"
+
+fail() {
+  echo "uninstall: $*" >&2
+  exit 1
+}
+
+[[ -e "$bindings_file" ]] || fail "$bindings_file does not exist"
+command -v luac >/dev/null 2>&1 || fail "luac is required"
+
+start_count=$(grep -Fxc -- "$start_marker" "$bindings_file" || true)
+end_count=$(grep -Fxc -- "$end_marker" "$bindings_file" || true)
+if (( start_count == 0 && end_count == 0 )); then
+  rm -f -- "$helper_target"
+  echo "Omarchy App Switcher configuration is already absent."
+  exit 0
+fi
+if (( start_count != 1 || end_count != 1 )); then
+  fail "refusing to edit an incomplete or duplicated marker block"
+fi
+
+timestamp=$(date -u +%Y%m%d%H%M%S)
+backup="$bindings_file.app-switcher.uninstall.bak.$timestamp"
+temp_file=$(mktemp "$bindings_file.app-switcher.XXXXXX")
+cp -p -- "$bindings_file" "$backup"
+
+awk -v start="$start_marker" -v finish="$end_marker" '
+  $0 == start { skipping = 1; next }
+  $0 == finish && skipping { skipping = 0; next }
+  !skipping { print }
+' "$bindings_file" >"$temp_file"
+
+chmod --reference="$bindings_file" "$temp_file"
+if ! luac -p "$temp_file"; then
+  rm -f -- "$temp_file"
+  fail "removing the marker block produced invalid Lua"
+fi
+
+mv -- "$temp_file" "$bindings_file"
+rm -f -- "$helper_target"
+
+if command -v hyprctl >/dev/null 2>&1; then hyprctl reload >/dev/null 2>&1 || true; fi
+echo "Removed Omarchy App Switcher configuration. Backup: $backup"

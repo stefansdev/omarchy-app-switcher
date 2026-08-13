@@ -1,24 +1,59 @@
 # Omarchy App Switcher
 
-A fast, theme-aware app switcher for Omarchy v4. It follows recent focus order,
-shows live window previews, and activates the selected app when Super is
+A fast, theme-aware recent-app switcher for Omarchy v4. It uses large HiDPI
+icons, follows recent focus order, and activates the selected app when Super is
 released.
+
+## Install
+
+```bash
+omarchy plugin add git@github.com:stefansdev/omarchy-app-switcher.git --enable --yes
+~/.config/omarchy/plugins/stefans.app-switcher/bin/install
+```
+
+The second command safely backs up `~/.config/hypr/bindings.lua`, installs the
+shortcuts and Super-release observer, validates the generated Lua, and reloads
+Hyprland. Running it again is safe.
 
 ## Controls
 
-- `Super+Tab`: open the switcher or move forward
-- `Super+Shift+Tab`: move backward
+- `Super+Tab`: open or move forward
+- `Super+Shift+Tab`: open or move backward
 - Release `Super`: activate the selected app
 - `Enter`: activate immediately
 - `Escape`: cancel
-- Click a card: activate it
+- Click an app: activate it
 
-## Development install
+## Update
 
-Link this repository into Omarchy's user plugin directory, rescan plugins,
-enable `stefans.app-switcher`, and put `bin/omarchy-app-switcher` on `PATH`.
-Load `hypr/app-switcher.lua` from the user Hyprland configuration so releasing
-Super commits the current selection reliably on Omarchy v4.
+```bash
+omarchy plugin update stefans.app-switcher --yes
+```
 
-The overlay uses Omarchy's shared `Color`, `Style`, `BorderSurface`, and
-Hyprland integration, so it follows the active theme automatically.
+Run the installer again only if release notes request it.
+
+## Remove
+
+Remove the shortcuts and observer before removing the plugin:
+
+```bash
+~/.config/omarchy/plugins/stefans.app-switcher/bin/uninstall
+omarchy plugin remove stefans.app-switcher --yes
+```
+
+## Design
+
+The keep-loaded overlay uses Omarchy's shared colors, typography, spacing, and
+surface tokens, so it follows the active theme. Icons are requested at the
+screen's device-pixel ratio, with Linux icon-theme lookup for desktop apps and
+Chromium web apps. Missing icons fall back to a monogram.
+
+## Requirements
+
+- Omarchy v4 / Quattro shell plugins
+- Hyprland's Lua configuration runtime
+- `jq`
+
+## License
+
+MIT

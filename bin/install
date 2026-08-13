@@ -1,0 +1,96 @@
+#!/bin/bash
+
+set -euo pipefail
+
+plugin_id="stefans.app-switcher"
+start_marker="-- omarchy-app-switcher:start"
+end_marker="-- omarchy-app-switcher:end"
+bindings_file="$HOME/.config/hypr/bindings.lua"
+plugin_dir="$HOME/.config/omarchy/plugins/$plugin_id"
+helper_target="$HOME/.local/bin/omarchy-app-switcher"
+
+fail() {
+  echo "install: $*" >&2
+  exit 1
+}
+
+for command in omarchy-shell omarchy-plugin-validate hyprctl luac jq; do
+  command -v "$command" >/dev/null 2>&1 || fail "$command is required; no configuration was changed"
+done
+
+[[ -f "$plugin_dir/manifest.json" && -f "$plugin_dir/hypr/app-switcher.lua" ]] ||
+  fail "install the plugin at $plugin_dir first"
+[[ -f "$bindings_file" ]] || fail "$bindings_file does not exist"
+
+omarchy-plugin-validate "$plugin_dir" >/dev/null || fail "plugin validation failed"
+luac -p "$plugin_dir/hypr/app-switcher.lua" || fail "observer validation failed"
+
+start_count=$(grep -Fxc -- "$start_marker" "$bindings_file" || true)
+end_count=$(grep -Fxc -- "$end_marker" "$bindings_file" || true)
+if (( start_count == 1 && end_count == 1 )); then
+  mkdir -p "$HOME/.local/bin"
+  ln -sfn "$plugin_dir/bin/omarchy-app-switcher" "$helper_target"
+  echo "Omarchy App Switcher is already configured."
+  exit 0
+fi
+if (( start_count != 0 || end_count != 0 )); then
+  fail "found an incomplete app-switcher marker block"
+fi
+
+timestamp=$(date -u +%Y%m%d%H%M%S)
+backup="$bindings_file.app-switcher.bak.$timestamp"
+temp_file=$(mktemp "$bindings_file.app-switcher.XXXXXX")
+changed=0
+
+cleanup() {
+  status=$?
+  rm -f -- "$temp_file"
+  if (( status != 0 && changed == 1 )); then
+    cp -p -- "$backup" "$bindings_file"
+    hyprctl reload >/dev/null 2>&1 || true
+    echo "install: restored $bindings_file after failure" >&2
+  fi
+  exit "$status"
+}
+trap cleanup EXIT
+
+cp -p -- "$bindings_file" "$backup"
+cp -p -- "$bindings_file" "$temp_file"
+
+cat >>"$temp_file" <<'LUA'
+
+-- omarchy-app-switcher:start
+hl.unbind("SUPER + TAB")
+hl.unbind("SUPER + SHIFT + TAB")
+o.bind("SUPER + TAB", "App switcher", "omarchy-app-switcher")
+o.bind("SUPER + SHIFT + TAB", "App switcher backward", "omarchy-app-switcher --reverse")
+do
+  local home = os.getenv("HOME")
+  local path = home and (home .. "/.config/omarchy/plugins/stefans.app-switcher/hypr/app-switcher.lua")
+  if path then
+    local file = io.open(path, "r")
+    if file then
+      file:close()
+      local ok, err = pcall(dofile, path)
+      if not ok then io.stderr:write("app-switcher: " .. tostring(err) .. "\n") end
+    end
+  end
+end
+-- omarchy-app-switcher:end
+LUA
+
+chmod --reference="$bindings_file" "$temp_file"
+luac -p "$temp_file" || fail "generated bindings.lua is invalid"
+mv -- "$temp_file" "$bindings_file"
+changed=1
+
+mkdir -p "$HOME/.local/bin"
+ln -sfn "$plugin_dir/bin/omarchy-app-switcher" "$helper_target"
+
+hyprctl reload >/dev/null || fail "Hyprland reload failed"
+config_errors=$(hyprctl configerrors 2>/dev/null || true)
+[[ -z "$config_errors" ]] || fail "Hyprland reported configuration errors: $config_errors"
+
+changed=0
+trap - EXIT
+echo "Configured Omarchy App Switcher. Backup: $backup"
