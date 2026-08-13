@@ -184,17 +184,17 @@ Item {
         readonly property real horizontalPadding: Style.spacing.panelPadding
         readonly property real verticalPadding: Style.spacing.lg
         readonly property real availableCardWidth: Math.max(
-          Style.space(150),
+          Style.space(132),
           (panel.width * 0.84 - horizontalPadding * 2
             - root.cardGap * (root.visibleCardCount - 1)) / root.visibleCardCount)
-        readonly property real cardWidth: Math.min(Style.space(244), availableCardWidth)
+        readonly property real cardWidth: Math.min(Style.space(168), availableCardWidth)
         readonly property real listWidth: Math.min(
           panel.width * 0.88 - horizontalPadding * 2,
           root.apps.length * cardWidth + Math.max(0, root.apps.length - 1) * root.cardGap)
 
         anchors.centerIn: parent
         width: listWidth + horizontalPadding * 2 + borderLeft + borderRight
-        height: Style.space(224) + verticalPadding * 2 + borderTop + borderBottom
+        height: Style.space(164) + verticalPadding * 2 + borderTop + borderBottom
         radius: Style.cornerRadius
         color: Color.popups.background
         borderSpec: Border.surfaceSpec(

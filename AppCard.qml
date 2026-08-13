@@ -1,6 +1,6 @@
 import QtQuick
+import QtQuick.Window
 import Quickshell
-import Quickshell.Wayland
 import qs.Commons
 import qs.Ui
 
@@ -18,9 +18,22 @@ BorderSurface {
   readonly property var desktopEntry: appId
     ? (DesktopEntries.byId(appId) || DesktopEntries.heuristicLookup(appId))
     : null
-  readonly property string iconSource: desktopEntry && desktopEntry.icon
-    ? Quickshell.iconPath(desktopEntry.icon, true)
+  readonly property string webAppIconName: {
+    var match = String(appData.class || "").toLowerCase()
+      .match(/^(?:chrome|chromium)-(.+?)__/)
+    if (!match) return ""
+    var parts = match[1].split(".")
+    if (parts[0] === "web") parts.shift()
+    return parts.length > 1 ? parts[parts.length - 2] : parts[0]
+  }
+  readonly property string iconName: webAppIconName
+    || (desktopEntry && desktopEntry.icon ? String(desktopEntry.icon) : "")
+  readonly property string iconSource: iconName
+    ? Quickshell.iconPath(iconName, true)
     : ""
+  readonly property string displayName: desktopEntry && desktopEntry.name
+    ? String(desktopEntry.name)
+    : String(appData.title || appData.class || "Application")
 
   signal activated()
 
@@ -39,78 +52,50 @@ BorderSurface {
     ColorAnimation { duration: 45 }
   }
 
-  Item {
-    id: previewArea
+  Image {
+    id: appIcon
 
+    visible: status === Image.Ready
+    anchors.horizontalCenter: parent.horizontalCenter
     anchors.top: parent.top
-    anchors.right: parent.right
-    anchors.left: parent.left
-    anchors.bottom: appDetails.top
-    anchors.margins: Style.spacing.sm
-    clip: true
-
-    ScreencopyView {
-      id: preview
-
-      anchors.centerIn: parent
-      captureSource: root.waylandToplevel
-      live: false
-      paintCursor: false
-      width: {
-        if (!hasContent || sourceSize.width <= 0 || sourceSize.height <= 0) return parent.width
-        return Math.min(parent.width, parent.height * sourceSize.width / sourceSize.height)
-      }
-      height: {
-        if (!hasContent || sourceSize.width <= 0 || sourceSize.height <= 0) return parent.height
-        return Math.min(parent.height, parent.width * sourceSize.height / sourceSize.width)
-      }
-      visible: hasContent
-    }
-
-    Image {
-      visible: !preview.hasContent && source !== ""
-      anchors.centerIn: parent
-      width: Math.min(parent.width, parent.height) * 0.38
-      height: width
-      source: root.iconSource
-      fillMode: Image.PreserveAspectFit
-      asynchronous: true
-      smooth: true
-      opacity: 0.82
-    }
+    anchors.topMargin: Style.spacing.lg
+    width: Math.min(Style.space(88), parent.width - Style.spacing.xl * 2)
+    height: width
+    source: root.iconSource
+    sourceSize: Qt.size(
+      Math.ceil(width * Screen.devicePixelRatio),
+      Math.ceil(height * Screen.devicePixelRatio))
+    fillMode: Image.PreserveAspectFit
+    asynchronous: true
+    cache: true
+    smooth: true
+    mipmap: true
   }
 
-  Row {
-    id: appDetails
+  Text {
+    visible: appIcon.status !== Image.Ready
+    anchors.centerIn: appIcon
+    text: root.displayName.slice(0, 1).toUpperCase()
+    color: Color.popups.text
+    font.family: Style.font.menuFamily
+    font.pixelSize: Style.font.displayLarge
+    font.weight: Font.Medium
+  }
 
+  Text {
     anchors.right: parent.right
     anchors.bottom: parent.bottom
     anchors.left: parent.left
     anchors.margins: Style.spacing.md
-    height: Style.space(32)
-    spacing: Style.spacing.sm
-
-    Image {
-      visible: source !== ""
-      anchors.verticalCenter: parent.verticalCenter
-      width: visible ? Style.font.icon : 0
-      height: width
-      source: root.iconSource
-      fillMode: Image.PreserveAspectFit
-      asynchronous: true
-      smooth: true
-    }
-
-    Text {
-      anchors.verticalCenter: parent.verticalCenter
-      width: parent.width - (root.iconSource ? Style.font.icon + parent.spacing : 0)
-      text: String(root.appData.title || root.appData.class || "Application")
-      color: Color.popups.text
-      font.family: Style.font.menuFamily
-      font.pixelSize: Style.font.bodySmall
-      elide: Text.ElideRight
-      verticalAlignment: Text.AlignVCenter
-    }
+    height: Style.space(28)
+    text: root.displayName
+    color: Color.popups.text
+    font.family: Style.font.menuFamily
+    font.pixelSize: Style.font.bodySmall
+    font.weight: Font.Medium
+    elide: Text.ElideRight
+    horizontalAlignment: Text.AlignHCenter
+    verticalAlignment: Text.AlignVCenter
   }
 
   HoverHandler {
