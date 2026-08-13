@@ -17,6 +17,8 @@ released.
 
 Link this repository into Omarchy's user plugin directory, rescan plugins,
 enable `stefans.app-switcher`, and put `bin/omarchy-app-switcher` on `PATH`.
+Load `hypr/app-switcher.lua` from the user Hyprland configuration so releasing
+Super commits the current selection reliably on Omarchy v4.
 
 The overlay uses Omarchy's shared `Color`, `Style`, `BorderSurface`, and
 Hyprland integration, so it follows the active theme automatically.

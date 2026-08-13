@@ -120,6 +120,12 @@ Item {
     dismiss()
   }
 
+  function commit(_) {
+    if (!opened) return "closed"
+    activateSelected()
+    return "ok"
+  }
+
   PanelWindow {
     id: panel
 
