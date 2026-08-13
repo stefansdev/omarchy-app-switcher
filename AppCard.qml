@@ -41,11 +41,7 @@ BorderSurface {
   color: selected
     ? Style.selectedFillFor(Color.popups.text, Color.accent)
     : Util.alpha(Color.popups.text, cardHover.hovered ? 0.08 : 0.045)
-  borderSpec: selected
-    ? Border.withWidth(
-        Border.controlSpec("focus", Color.popups.text, Color.accent),
-        Math.max(Style.space(2), Style.focusBorderWidth))
-    : Border.flat(Util.alpha(Color.popups.border, 0.42), Math.max(1, Style.normalBorderWidth))
+  borderSpec: Border.none()
   clip: true
 
   Behavior on color {

@@ -197,8 +197,7 @@ Item {
         height: Style.space(164) + verticalPadding * 2 + borderTop + borderBottom
         radius: Style.cornerRadius
         color: Color.popups.background
-        borderSpec: Border.surfaceSpec(
-          "popups", "border", Color.popups.border, Math.max(1, Style.normalBorderWidth))
+        borderSpec: Border.none()
         opacity: root.opened ? 1 : 0
 
         Behavior on opacity {
