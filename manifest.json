@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "stefans.app-switcher",
+  "name": "App Switcher",
+  "version": "0.1.0",
+  "author": "stefans",
+  "description": "A fast, theme-aware recent-app switcher for Omarchy",
+  "kinds": ["overlay"],
+  "entryPoints": {
+    "overlay": "AppSwitcher.qml"
+  },
+  "keepLoaded": true
+}

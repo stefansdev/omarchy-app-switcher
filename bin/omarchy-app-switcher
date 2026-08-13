@@ -1,0 +1,27 @@
+#!/bin/bash
+
+set -euo pipefail
+
+direction=1
+if [[ ${1:-} == --reverse ]]; then
+  direction=-1
+fi
+
+apps=$(hyprctl clients -j | jq '
+  sort_by(.focusHistoryID)
+  | map(select(.mapped == true and .focusHistoryID >= 0 and .class != ""))
+  | reduce .[] as $client ([];
+      if any(.[]; .class == $client.class) then .
+      else . + [{
+        address: $client.address,
+        class: $client.class,
+        title: ($client.title // $client.class),
+        workspace: $client.workspace.id
+      }]
+      end)
+')
+
+payload=$(jq -cn --argjson direction "$direction" --argjson apps "$apps" \
+  '{direction: $direction, apps: $apps}')
+
+omarchy-shell shell summon stefans.app-switcher "$payload"
