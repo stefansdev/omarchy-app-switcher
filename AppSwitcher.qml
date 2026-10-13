@@ -13,6 +13,7 @@ Item {
   property bool opened: false
   property var apps: []
   property int selectedIndex: -1
+  property string pendingAddress: ""
   property var targetScreen: Quickshell.screens.length > 0 ? Quickshell.screens[0] : null
 
   readonly property int visibleCardCount: Math.max(1, Math.min(5, apps.length))
@@ -112,12 +113,32 @@ Item {
       return
     }
 
-    if (Hyprland.usingLua)
-      Hyprland.dispatch("hl.dsp.focus({ window = \"address:" + address + "\" })")
-    else
-      Hyprland.dispatch("focuswindow address:" + address)
-
+    // Hyprland refuses window focus while our exclusive-keyboard overlay is
+    // mapped, so close it first and focus once the layer is gone.
+    pendingAddress = address
     dismiss()
+    focusTimer.restart()
+  }
+
+  function focusPending() {
+    var address = pendingAddress
+    pendingAddress = ""
+    if (!address) return
+
+    // Focusing doesn't raise floating windows, so bring the newly active one to the top.
+    if (Hyprland.usingLua) {
+      Hyprland.dispatch("hl.dsp.focus({ window = \"address:" + address + "\" })")
+      Hyprland.dispatch("hl.dsp.window.bring_to_top()")
+    } else {
+      Hyprland.dispatch("focuswindow address:" + address)
+      Hyprland.dispatch("alterzorder top")
+    }
+  }
+
+  Timer {
+    id: focusTimer
+    interval: 30
+    onTriggered: root.focusPending()
   }
 
   function commit(_) {
