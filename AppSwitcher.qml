@@ -82,6 +82,7 @@ Item {
     targetScreen = focusedScreen()
     selectedIndex = payload.direction < 0 ? apps.length - 1 : Math.min(1, apps.length - 1)
     opened = true
+    setSubmap(true)
     appList.currentIndex = selectedIndex
     Qt.callLater(function() {
       keyCatcher.forceActiveFocus()
@@ -89,7 +90,15 @@ Item {
     })
   }
 
+  // While open, a bind-less "app-switcher" submap (hypr/app-switcher.lua) lets
+  // Super+Tab and Super+arrows reach the overlay instead of Hyprland binds.
+  function setSubmap(on) {
+    var name = on ? "app-switcher" : "reset"
+    Hyprland.dispatch(Hyprland.usingLua ? "hl.dsp.submap(\"" + name + "\")" : "submap " + name)
+  }
+
   function close() {
+    if (opened) setSubmap(false)
     opened = false
     apps = []
     selectedIndex = -1
@@ -138,6 +147,10 @@ Item {
     }
   }
 
+  // Never leave Hyprland stuck in the switcher submap after a shell restart.
+  Component.onCompleted: Quickshell.execDetached(["bash", "-c",
+    "[ \"$(hyprctl submap 2>/dev/null)\" = app-switcher ] && hyprctl dispatch 'hl.dsp.submap(\"reset\")'"])
+
   Timer {
     id: focusTimer
     interval: 30
@@ -183,8 +196,11 @@ Item {
         if (event.key === Qt.Key_Tab) {
           root.advance((event.modifiers & Qt.ShiftModifier) ? -1 : 1)
           event.accepted = true
-        } else if (event.key === Qt.Key_Backtab) {
+        } else if (event.key === Qt.Key_Backtab || event.key === Qt.Key_Left) {
           root.advance(-1)
+          event.accepted = true
+        } else if (event.key === Qt.Key_Right) {
+          root.advance(1)
           event.accepted = true
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
           root.activateSelected()

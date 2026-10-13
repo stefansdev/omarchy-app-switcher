@@ -20,6 +20,7 @@ Hyprland. Running it again is safe.
 
 - `Super+Tab`: open or move forward
 - `Super+Shift+Tab`: open or move backward
+- `Super+Left` / `Super+Right` (or the arrows alone): move while open
 - Release `Super`: activate the selected app
 - `Enter`: activate immediately
 - `Escape`: cancel

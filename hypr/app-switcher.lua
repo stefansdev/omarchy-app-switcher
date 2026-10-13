@@ -1,3 +1,9 @@
+-- Entered by the overlay while it is open, so Super+Tab and Super+arrows reach
+-- it instead of global binds. Super+Escape always gets you out.
+pcall(hl.define_submap, "app-switcher", function()
+  pcall(hl.bind, "SUPER + ESCAPE", hl.dsp.submap("reset"), { description = "Leave app switcher submap" })
+end)
+
 local TAB_KEYCODE = 23
 local SUPER_KEYCODES = {
   [133] = true,
