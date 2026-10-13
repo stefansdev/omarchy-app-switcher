@@ -125,13 +125,16 @@ Item {
     pendingAddress = ""
     if (!address) return
 
-    // Focusing doesn't raise floating windows, so bring the newly active one to the top.
+    // Focusing doesn't raise floating windows, so raise the target explicitly.
+    // Address it directly rather than via the active window, which may be
+    // unset if the focus request was refused.
+    var target = "address:" + address
     if (Hyprland.usingLua) {
-      Hyprland.dispatch("hl.dsp.focus({ window = \"address:" + address + "\" })")
-      Hyprland.dispatch("hl.dsp.window.bring_to_top()")
+      Hyprland.dispatch("hl.dsp.focus({ window = \"" + target + "\" })")
+      Hyprland.dispatch("hl.dsp.window.alter_zorder({ mode = \"top\", window = \"" + target + "\" })")
     } else {
-      Hyprland.dispatch("focuswindow address:" + address)
-      Hyprland.dispatch("alterzorder top")
+      Hyprland.dispatch("focuswindow " + target)
+      Hyprland.dispatch("alterzorder top," + target)
     }
   }
 
