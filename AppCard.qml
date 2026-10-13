@@ -34,6 +34,14 @@ BorderSurface {
   readonly property string displayName: desktopEntry && desktopEntry.name
     ? String(desktopEntry.name)
     : String(appData.title || appData.class || "Application")
+  // Apps with several windows show the window title so their cards can be told apart.
+  readonly property string label: appData.shared && appData.title
+    ? String(appData.title)
+    : displayName
+  // Special workspaces (scratchpad) have negative ids, so show their name instead.
+  readonly property string workspaceLabel: Number(appData.workspace) > 0
+    ? String(appData.workspace)
+    : String(appData.workspaceName || "").replace(/^special:/, "")
 
   signal activated()
 
@@ -78,13 +86,34 @@ BorderSurface {
     font.weight: Font.Medium
   }
 
+  Rectangle {
+    visible: root.workspaceLabel !== ""
+    anchors.left: parent.left
+    anchors.top: parent.top
+    anchors.margins: Style.spacing.sm
+    width: Math.max(height, workspaceText.implicitWidth + Style.spacing.sm * 2)
+    height: workspaceText.implicitHeight + Style.spacing.xs * 2
+    radius: height / 2
+    color: Util.alpha(Color.popups.text, 0.12)
+
+    Text {
+      id: workspaceText
+      anchors.centerIn: parent
+      text: root.workspaceLabel
+      color: Color.popups.text
+      font.family: Style.font.menuFamily
+      font.pixelSize: Style.font.caption
+      font.weight: Font.Medium
+    }
+  }
+
   Text {
     anchors.right: parent.right
     anchors.bottom: parent.bottom
     anchors.left: parent.left
     anchors.margins: Style.spacing.md
     height: Style.space(28)
-    text: root.displayName
+    text: root.label
     color: Color.popups.text
     font.family: Style.font.menuFamily
     font.pixelSize: Style.font.bodySmall

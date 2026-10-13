@@ -1,8 +1,9 @@
 # Omarchy App Switcher
 
 A fast, theme-aware recent-app switcher for Omarchy v4. It uses large HiDPI
-icons, follows recent focus order, and activates the selected app when Super is
-released.
+icons, lists every open window in recent focus order, and activates the selected
+window when Super is released. Apps with several windows show each window's
+title.
 
 ## Install
 

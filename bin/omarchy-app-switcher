@@ -10,15 +10,15 @@ fi
 apps=$(hyprctl clients -j | jq '
   sort_by(.focusHistoryID)
   | map(select(.mapped == true and .focusHistoryID >= 0 and .class != ""))
-  | reduce .[] as $client ([];
-      if any(.[]; .class == $client.class) then .
-      else . + [{
-        address: $client.address,
-        class: $client.class,
-        title: ($client.title // $client.class),
-        workspace: $client.workspace.id
-      }]
-      end)
+  | (group_by(.class) | map({key: .[0].class, value: length}) | from_entries) as $counts
+  | map({
+      address,
+      class,
+      title: (.title // .class),
+      workspace: .workspace.id,
+      workspaceName: .workspace.name,
+      shared: ($counts[.class] > 1)
+    })
 ')
 
 payload=$(jq -cn --argjson direction "$direction" --argjson apps "$apps" \
